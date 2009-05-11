@@ -3,6 +3,13 @@ require 'helpers'
 
 URL = 'git+ssh://localhost/opt/test.git'
 
+test_git_hg_git('git encodings') do
+  git('config i18n.commitencoding ISO-8859-1')
+  append_data('README', 'testing', 'git')
+  git("commit -am 'test encoding'") 
+  git('config --unset i18n.commitencoding')
+end
+
 test_hg_hg('rename in both branches') do
   append_data('README', 'testing')
   hg("commit -m 'test'") # 0
@@ -33,8 +40,6 @@ test_hg_hg('rename in both branches') do
   hg("merge 8")
   hg("commit -m 'merge'") # 9
 end
-
-exit
 
 test_hg_hg('rename early in first branch') do
   append_data('README', 'testing')
