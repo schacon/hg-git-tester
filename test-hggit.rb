@@ -3,6 +3,49 @@ require 'helpers'
 
 URL = 'git+ssh://localhost/opt/test.git'
 
+test_git_hg_git('modes') do
+  append_data('README', 'testing', 'git')
+  `ln -s README r.txt`
+  `git add r.txt`
+  append_data('run', 'testing', 'git')
+  `chmod a+x run`
+  git("commit -am 'test'")
+end
+
+#exit
+
+test_hg_hg('simple') do
+  append_data('README', 'testing')
+  hg("commit -m 'test'")
+end
+
+test_hg_hg('simple subdirectory') do
+  append_data('README', 'testing')
+  `mkdir lib`
+  append_data('lib/test.rb', 'testing')
+  hg('add lib/test.rb')
+  hg("commit -m 'test'")
+end
+
+test_git_hg_git('git subdirectory') do
+  append_data('README', 'testing', 'git')
+  `mkdir lib`
+  append_data('lib/test.rb', 'testing')
+  git("add lib/test.rb")
+  git("commit -am 'test'") 
+end
+
+
+test_git_hg_git('git committer info') do
+  append_data('README', 'testing', 'git')
+  git("commit -am 'test'") 
+  append_data('README', 'testing2', 'git')
+
+  ENV['GIT_COMMITTER_EMAIL'] = 'scotty@scotty.com'
+  git("commit -am 'different committer'") 
+  ENV['GIT_COMMITTER_EMAIL'] = nil
+end
+
 test_git_hg_git('simple git merge') do
   append_data('README', 'testing', 'git')
   git("commit -am 'test'") 
@@ -105,9 +148,11 @@ test_hg_hg('rename in first branch') do
   hg("commit -m 'merge'") # 3
 end
 
-test_hg_hg('simple') do
+test_hg_hg('rename') do
   append_data('README', 'testing')
   hg("commit -m 'test'")
+  hg("mv README readme.txt")
+  hg("commit -m 'rename'")
 end
 
 test_hg_hg('branches') do
@@ -122,12 +167,5 @@ test_hg_hg('branches') do
   hg("update -C 1")
   hg("merge 2")
   hg("commit -m 'merge'")
-end
-
-test_hg_hg('rename') do
-  append_data('README', 'testing')
-  hg("commit -m 'test'")
-  hg("mv README readme.txt")
-  hg("commit -m 'rename'")
 end
 

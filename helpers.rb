@@ -51,8 +51,14 @@ end
 $debug = false
 
 def hg(command)
-  out = `hg #{command} 2>/dev/null`
-  puts out if $debug
+  if $debug
+    puts command
+    out = `hg #{command}`
+    puts out 
+    puts
+  else
+    out = `hg #{command} 2>/dev/null`
+  end
   out
 end
 
