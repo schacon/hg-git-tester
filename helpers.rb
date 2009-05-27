@@ -68,6 +68,19 @@ def git(command)
   out
 end
 
+def kill_repo
+  Dir.chdir("/opt") do
+    pwd = `pwd`.strip
+    if pwd == '/opt'
+      `rm -Rf test.git`
+      `mkdir test.git`
+      Dir.chdir('test.git') do
+        git('init --bare')
+      end
+    end
+  end
+end
+
 def test_hg_hg(name, debug = false)
   $debug = debug
   cs_before = []
@@ -96,6 +109,84 @@ def test_hg_hg(name, debug = false)
   cs_sa = cs_sha_array(cs_after)
 
   compare_sha_lists(cs_sb, cs_sa, name)
+end
+
+def test_hg_hg_tags(name, debug = false)
+  $debug = debug
+  tags_before = []
+  tags_after = []
+
+  # setup hg test repository
+  in_temp_dir do
+    hg('init')
+
+    yield
+
+    tags_before = hg("tags")
+    hg("gremote add origin #{URL}")
+    hg("gpush")
+  end
+
+  # clone it back from git and verify that the output matches
+  in_temp_dir do
+    hg("gclone #{URL}")
+    Dir.chdir('test-hg') do
+      tags_after = hg("tags")
+    end
+  end
+
+  if $debug
+    pp tags_before
+    pp tags_after
+  end
+
+  if tags_before == tags_after
+    puts "YAY BEER - #{name}"
+  else
+    puts "BOO LOIS - #{name}"
+  end
+  kill_repo
+end
+
+def test_git_hg_tags(name, debug = false)
+  $debug = debug
+  tags_before = []
+  tags_after = []
+
+  # setup git test repository
+  in_temp_dir do
+    git('init')
+    yield
+    git('log --pretty=fuller --name-only -p')
+
+    tags_before = git('tag')
+    
+    git("remote add origin #{URL}")
+    git("push origin --tags")
+  end
+
+  # clone it back from git and verify that the output matches
+  in_temp_dir do
+    hg("gclone #{URL}")
+    Dir.chdir('test-hg') do
+      tags_after = hg("tags")
+    end
+  end
+
+  tags_before = tags_before.split("\n")
+  tags_after = tags_after.split("\n").map { |a| a.split(" ").first }
+  
+  if $debug
+    pp tags_before
+    pp tags_after 
+  end
+
+  if (tags_before - tags_before).size == 0
+    puts "YAY BEER - #{name}"
+  else
+    puts "BOO LOIS - #{name}"
+  end
+  kill_repo
 end
 
 def compare_sha_lists(cs_sb, cs_sa, name)

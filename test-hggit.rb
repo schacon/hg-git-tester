@@ -3,11 +3,32 @@ require 'helpers'
 
 URL = 'git+ssh://localhost/opt/test.git'
 
+# test: git annotated tags
+# test: git lightweight tags
+
 test_git_hg_git('git encodings') do
   git('config i18n.commitencoding ISO-8859-1')
   append_data('README', 'testing', 'git')
   git("commit -am 'test encoding'") 
   git('config --unset i18n.commitencoding')
+end
+
+test_git_hg_tags('git hg tags') do
+  # make a tag in git
+  # import into hg
+  # make sure it has a local tag
+  append_data('README', 'testing', 'git')
+  git("commit -am 'test commit one'") 
+  git('tag -a v2.1 -m test')
+  git('rev-parse master')
+  append_data('README', 'testing', 'git')
+  git("commit -am 'test commit two'") 
+end
+
+test_hg_hg_tags('local tags') do
+  append_data('README', 'testing')
+  hg("commit -m 'test'") # 0
+  hg("tag v1.1") # 0
 end
 
 test_hg_hg('rename in both branches') do
